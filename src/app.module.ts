@@ -2,9 +2,6 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { AppService } from './app.service';
 import { TasksModule } from './tasks/tasks.module';
-import { TasksController } from './tasks/tasks.controller';
-import { TasksService } from './tasks/tasks.service';
-import { TasksProcessor } from './tasks/tasks.processor';
 
 @Module({
   imports: [

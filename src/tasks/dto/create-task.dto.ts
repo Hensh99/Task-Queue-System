@@ -1,11 +1,13 @@
-import { IsString, IsObject, IsOptional, IsISO8601 } from 'class-validator';
+import { IsString, IsObject, IsOptional, IsISO8601, IsNotEmpty } from 'class-validator';
 
 export class CreateTaskDto {
+  @IsNotEmpty()
   @IsString()
   type: string;
 
+  @IsNotEmpty()
   @IsObject()
-  payload: Record<string, any>;
+  payload: Object
 
   @IsOptional()
   @IsISO8601()

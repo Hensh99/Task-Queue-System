@@ -1,22 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 
 @Injectable()
 export class DlqService {
+  private readonly logger = new Logger(DlqService.name);
+
   constructor(@InjectQueue('dlq') private readonly dlqQueue: Queue) {}
 
-  // Method to retrieve tasks in the dead-letter queue
-  async getDlqTasks() {
-    return this.dlqQueue.getJobs(['failed']);
+  async addToDlq(job, errorMessage: string) {
+    await this.dlqQueue.add('failedTask', {
+      ...job.data,
+      failedReason: errorMessage,
+    });
+    this.logger.log(`Task [${job.id}] moved to DLQ`);
   }
 
-  // Method to clear the dead-letter queue
+  async getDlqJobs() {
+    const jobs = await this.dlqQueue.getFailed();
+    return jobs.map((job) => ({
+      id: job.id,
+      data: job.data,
+      failedReason: job.failedReason,
+    }));
+  }
+
   async clearDlq() {
-    const jobs = await this.dlqQueue.getJobs(['failed']);
-    for (const job of jobs) {
-      await job.remove();
-    }
+    const jobs = await this.dlqQueue.getFailed();
+    await Promise.all(jobs.map((job) => job.remove()));
     return { status: 'DLQ cleared' };
   }
 }

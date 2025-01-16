@@ -1,35 +1,31 @@
-import { Controller, Post, Body, Get, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { DlqService } from './dlq.service';
+import { CreateTaskDto } from './dto/create-task.dto';
 
 @Controller('tasks')
 export class TasksController {
   constructor(
     private readonly tasksService: TasksService,
-    private readonly dlqService: DlqService
+    private readonly dlqService: DlqService,
   ) {}
 
-  // Endpoint to add a task to the queue
   @Post()
-  async addTask(@Body() createTaskDto: { type: string; payload: any; visibility_time?: string }) {
+  async addTask(@Body() createTaskDto: CreateTaskDto) {
     return this.tasksService.addTask(createTaskDto);
   }
 
-  // Endpoint to get tasks from the DLQ
-  @Get('/dlq')
-  async getDlqTasks() {
-    const dlqTasks = await this.dlqService.getDlqTasks();
-    return dlqTasks.map((job) => ({
-      id: job.id,
-      type: job.name,
-      data: job.data,
-      failedReason: job.failedReason,
-      attemptsMade: job.attemptsMade,
-    }));
+  @Get('metrics')
+  async getMetrics() {
+    return this.tasksService.getQueueMetrics();
   }
 
-  // Endpoint to clear the DLQ
-  @Delete('/dlq')
+  @Get('dlq')
+  async getDlqJobs() {
+    return this.dlqService.getDlqJobs();
+  }
+
+  @Delete('dlq')
   async clearDlq() {
     return this.dlqService.clearDlq();
   }
