@@ -1,7 +1,7 @@
 export interface Task {
   id: string;
   type: string;
-  payload: Record<string, any>;
+  payload: Object;
   visibility_time?: string;
   retryCount: number;
   error?: string;
