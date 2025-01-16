@@ -10,24 +10,30 @@ export class DlqService {
 
   async addToDlq(job, errorMessage: string) {
     await this.dlqQueue.add('failedTask', {
+      originalJobId: job.id,
       ...job.data,
       failedReason: errorMessage,
+      failedAt: new Date().toISOString(),
     });
-    this.logger.log(`Task [${job.id}] moved to DLQ`);
   }
 
   async getDlqJobs() {
-    const jobs = await this.dlqQueue.getFailed();
+    // Changed: Get all jobs, not just failed ones
+    const jobs = await this.dlqQueue.getJobs(['waiting', 'active', 'failed', 'completed']);
     return jobs.map((job) => ({
       id: job.id,
-      data: job.data,
-      failedReason: job.failedReason,
+      originalJobId: job.data.originalJobId,
+      type: job.data.type,
+      payload: job.data.payload,
+      failedReason: job.data.failedReason,
+      failedAt: job.data.failedAt
     }));
   }
 
   async clearDlq() {
-    const jobs = await this.dlqQueue.getFailed();
-    await Promise.all(jobs.map((job) => job.remove()));
+    // Changed: Clear all jobs, not just failed ones
+    await this.dlqQueue.empty();
+    this.logger.log('DLQ cleared');
     return { status: 'DLQ cleared' };
   }
 }

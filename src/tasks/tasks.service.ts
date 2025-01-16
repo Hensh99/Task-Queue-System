@@ -16,7 +16,6 @@ export class TasksService {
       : 0;
 
     const job = await this.taskQueue.add(
-      createTaskDto.type,
       {
         type: createTaskDto.type,
         payload: createTaskDto.payload,
@@ -24,6 +23,11 @@ export class TasksService {
       },
       {
         delay: Math.max(0, delay),
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
       },
     );
 
@@ -34,13 +38,16 @@ export class TasksService {
   }
 
   async getQueueMetrics() {
-    const [waiting, active, completed, failed, dlqSize] = await Promise.all([
+    const [waiting, active, completed, failed] = await Promise.all([
       this.taskQueue.getWaitingCount(),
       this.taskQueue.getActiveCount(),
       this.taskQueue.getCompletedCount(),
       this.taskQueue.getFailedCount(),
-      this.dlqQueue.getJobCounts().then(({ waiting }) => waiting),
     ]);
+
+    // Changed: Get all DLQ jobs count
+    const dlqJobs = await this.dlqQueue.getJobs(['waiting', 'active', 'failed', 'completed']);
+    const dlqSize = dlqJobs.length;
 
     return {
       current_queue_size: waiting + active,
