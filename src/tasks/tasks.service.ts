@@ -14,6 +14,9 @@ export class TasksService {
     const delay = createTaskDto.visibility_time
       ? new Date(createTaskDto.visibility_time).getTime() - Date.now()
       : 0;
+    
+    const formattedDelay = this.formatDelay(delay);
+    console.log('delay= ',formattedDelay )
 
     const job = await this.taskQueue.add(
       {
@@ -33,8 +36,22 @@ export class TasksService {
 
     return {
       id: job.id,
-      status: 'Task added to queue',
+      status: `Task ${job.id} added to queue`,
+      delay: formattedDelay,
     };
+  }
+
+  private formatDelay(milliseconds: number): string {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    const remainingSeconds = seconds % 60;
+    const remainingMinutes = minutes % 60;
+    const remainingHours = hours % 24;
+
+    return `${days} days, ${remainingHours} hours, ${remainingMinutes} minutes, ${remainingSeconds} seconds`;
   }
 
   async getQueueMetrics() {
